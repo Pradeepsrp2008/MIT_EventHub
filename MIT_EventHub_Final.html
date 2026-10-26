@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIT EventHub V2 - College Event Management</title>
+<style>
+*{box-sizing:border-box}
+:root{--blue:#1453a6;--dark:#0b1f4b;--light:#f5f7fb;--border:#d7deea;--text:#172033;--muted:#687386}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--light);color:var(--text)}
+header{background:linear-gradient(135deg,#0b1f4b,#1557b0);color:#fff;padding:16px 6%;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.logo{font-size:23px;font-weight:800}.logo span{color:#78b7ff}
+nav{display:flex;gap:6px;flex-wrap:wrap}nav button{background:none;border:0;color:#fff;padding:9px 12px;font-size:14px;cursor:pointer;border-radius:8px}nav button:hover{background:#ffffff20}
+.page{display:none;min-height:calc(100vh - 70px)}.page.active{display:block}
+.hero{padding:60px 6%;background:linear-gradient(135deg,#eaf3ff,#fff);display:flex;justify-content:space-between;gap:30px;align-items:center}
+.hero h1{font-size:42px;margin:10px 0 12px;color:#092455}.hero p{max-width:650px;color:#5c677d;line-height:1.6}.badge{display:inline-block;background:#dbeaff;color:#1453a6;padding:7px 12px;border-radius:20px;font-size:12px;font-weight:700}.hero-art{font-size:90px}
+.container{padding:30px 6%;max-width:1300px;margin:auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:28px}.stat{background:#fff;border-radius:15px;padding:20px;box-shadow:0 5px 20px #152b4d10;text-align:center}.stat b{font-size:27px;color:#1254a6;display:block}.stat span{font-size:13px;color:#6b7587}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}input,select,textarea{padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#fff;outline:none;font:inherit}.search{flex:1;min-width:220px}
+.filters{display:flex;gap:8px;flex-wrap:wrap}.filter{border:1px solid var(--border);background:#fff;padding:10px 15px;border-radius:20px;cursor:pointer}.filter.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.card{background:#fff;border-radius:17px;overflow:hidden;box-shadow:0 7px 25px #152b4d12;transition:.2s}.card:hover{transform:translateY(-3px)}.card-top{padding:18px;background:linear-gradient(135deg,#1254a6,#3180df);color:#fff}.category{font-size:11px;font-weight:700;text-transform:uppercase;opacity:.9}.card h3{margin:7px 0;font-size:20px}.card-body{padding:18px}.meta{font-size:13px;color:#596579;margin:9px 0}.desc{font-size:13px;line-height:1.5;color:#697387;min-height:40px}.seat{margin:14px 0}.bar{height:7px;background:#e7ebf2;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#1b70d1}.actions{display:flex;gap:9px;margin-top:15px;flex-wrap:wrap}.btn{border:0;border-radius:9px;padding:11px 14px;cursor:pointer;font-weight:700}.primary{background:var(--blue);color:#fff}.secondary{background:#edf3fb;color:var(--blue)}.danger{background:#fff0f0;color:#b42318}.empty{text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;background:#fff;border-radius:15px}
+.panel{background:#fff;border-radius:17px;padding:24px;box-shadow:0 7px 25px #152b4d12;margin-bottom:22px}.panel h2{margin-top:0}.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.form-grid .full{grid-column:1/-1}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.field input,.field select,.field textarea{width:100%}.field textarea{min-height:95px;resize:vertical}
+.notice{padding:11px 13px;border-radius:9px;background:#e9f7ee;color:#176b39;font-size:13px;display:none;margin-top:12px}.notice.error{background:#fff0f0;color:#a61b1b}
+.login-wrap{max-width:500px;margin:50px auto}.login-icon{text-align:center;font-size:52px}.login-wrap .panel{text-align:left}
+.gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.gallery-card{background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 5px 18px #152b4d12}.gallery-card img{width:100%;height:190px;object-fit:cover;display:block;cursor:pointer}.gallery-info{padding:13px}.gallery-info h3{margin:0 0 5px;font-size:16px}.gallery-info p{margin:0;color:var(--muted);font-size:12px}
+.modal-bg{position:fixed;inset:0;background:#07142bb8;display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal{background:#fff;border-radius:18px;width:min(540px,100%);padding:25px;max-height:90vh;overflow:auto}.close{float:right;border:0;background:#eef2f7;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:20px}
+footer{background:var(--dark);color:#c9d5e8;text-align:center;padding:25px;font-size:13px;margin-top:40px}
+.small{font-size:12px;color:var(--muted)}.center{text-align:center}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.gallery-grid{grid-template-columns:repeat(2,1fr)}.hero-art{display:none}}
+@media(max-width:600px){.grid,.gallery-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.hero h1{font-size:31px}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}nav button{font-size:12px;padding:7px}}
+
+/* V2 additions */
+.user-pill{display:none;background:#ffffff20;border:1px solid #ffffff30;padding:7px 10px;border-radius:18px;font-size:12px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+.dashboard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:22px}
+.kpi{background:#fff;border-radius:15px;padding:18px;box-shadow:0 5px 20px #152b4d10}.kpi b{font-size:26px;color:var(--blue);display:block}.kpi span{font-size:12px;color:var(--muted)}
+.status{display:inline-block;padding:5px 9px;border-radius:14px;font-size:11px;font-weight:800;margin-top:7px}.open{background:#e9f7ee;color:#176b39}.fast{background:#fff6df;color:#946200}.full{background:#fff0f0;color:#a61b1b}.done{background:#eef2f7;color:#596579}
+.event-poster{width:100%;height:170px;object-fit:cover;background:#dbeaff}
+.detail-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:22px}.detail-box{background:#fff;border-radius:17px;padding:24px;box-shadow:0 7px 25px #152b4d12}
+.ticket{border:2px dashed #b8c8df;border-radius:16px;padding:20px;background:#f8fbff}.ticket-id{font-size:20px;font-weight:800;color:var(--blue)}#qrCanvas{display:block;margin:15px auto;background:#fff;border-radius:8px}
+.notification{padding:12px 14px;background:#eef6ff;border-left:4px solid var(--blue);border-radius:8px;margin:8px 0;font-size:13px}
+.table-wrap{overflow:auto}.data-table{width:100%;border-collapse:collapse;background:#fff}.data-table th,.data-table td{padding:11px;border-bottom:1px solid #e8edf4;text-align:left;font-size:13px;white-space:nowrap}.data-table th{background:#f7f9fc;color:#526078}
+.admin-login{max-width:430px;margin:45px auto}
+.notification{line-height:1.6}
+#galleryUploadPanel{border-top:1px solid var(--border);padding-top:16px;margin-top:16px}
+@media(max-width:900px){.dashboard-grid{grid-template-columns:1fr 1fr}.detail-layout{grid-template-columns:1fr}}
+@media(max-width:600px){.dashboard-grid{grid-template-columns:1fr 1fr}.event-poster{height:150px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">MIT <span>EventHub</span></div>
+  <nav>
+    <button onclick="showPage('home')">Home</button>
+    <button onclick="showPage('events')">Events</button>
+    <button onclick="showPage('gallery')">Gallery</button>
+    <button onclick="showPage('dashboard')">Dashboard</button>
+    <button onclick="showPage('myRegistrations')">My Registrations</button>
+    <button onclick="showPage('adminLogin')" id="adminNav">Admin</button>
+    <button onclick="showPage('login')" id="loginNav">Student Login</button>
+  </nav>
+</header>
+
+<section id="home" class="page active">
+  <div class="hero">
+    <div>
+      <span class="badge">COLLEGE EVENT MANAGEMENT SYSTEM</span>
+      <h1>Discover. Register. Participate.</h1>
+      <p>One place for students to discover college events, check available seats and register instantly.</p>
+      <button class="btn primary" onclick="showPage('events')">Explore Events</button>
+    </div>
+    <div class="hero-art">🎓</div>
+  </div>
+  <main class="container">
+    <div class="stats">
+      <div class="stat"><b id="totalEvents">0</b><span>Total Events</span></div>
+      <div class="stat"><b id="upcoming">0</b><span>Upcoming Events</span></div>
+      <div class="stat"><b id="registrations">0</b><span>My Registrations</span></div>
+      <div class="stat"><b id="seats">0</b><span>Seats Available</span></div>
+    </div>
+    <div class="panel center">
+      <h2>Upcoming Events Count</h2>
+      <div style="font-size:42px;font-weight:800;color:#1453a6" id="upcomingCenter">0</div>
+      <p class="small">Editable from the Admin page. Leave it on Auto to use the real event count.</p>
+      <button class="btn secondary" onclick="showPage('events')">View Events</button>
+    </div>
+  </main>
+</section>
+
+<section id="events" class="page">
+<main class="container">
+  <div class="panel">
+    <h2>Upcoming Events</h2>
+    <div class="toolbar">
+      <input id="search" class="search" placeholder="Search events, venues or categories..." oninput="renderEvents()">
+      <select id="sort" onchange="renderEvents()"><option value="date">Sort by date</option><option value="seats">Most seats</option><option value="name">Name</option></select>
+    </div>
+    <div class="filters">
+      <button class="filter active" onclick="setFilter('All',this)">All</button>
+      <button class="filter" onclick="setFilter('Technical',this)">Technical</button>
+      <button class="filter" onclick="setFilter('Cultural',this)">Cultural</button>
+      <button class="filter" onclick="setFilter('Sports',this)">Sports</button>
+      <button class="filter" onclick="setFilter('Workshop',this)">Workshop</button>
+    </div>
+  </div>
+  <div id="eventGrid" class="grid"></div>
+</main>
+</section>
+
+<section id="myRegistrations" class="page">
+<main class="container">
+  <div class="panel"><h2>My Registered Events</h2><p class="small">Your registrations are stored in the browser's IndexedDB database and linked to your student email.</p></div>
+  <div id="registeredList" class="grid"></div>
+</main>
+</section>
+
+<section id="gallery" class="page">
+<main class="container">
+  <div class="panel">
+    <h2>Event Gallery</h2>
+    <p class="small" id="galleryIntro">Browse photos from college events.</p>
+    <div id="galleryUploadPanel">
+    <p class="small">Admin-only: upload and manage event photos.</p>
+    <div class="form-grid">
+      <div class="field"><label>Photo title / event name</label><input id="galleryTitle" placeholder="e.g. Tech Fest 2026"></div>
+      <div class="field"><label>Event album (optional)</label><select id="galleryEvent"><option value="">Select event album (optional)</option></select></div>
+      <div class="field"><label>Select photos</label><input id="galleryFile" type="file" accept="image/*" multiple></div>
+    </div>
+    <button class="btn primary" style="margin-top:14px" onclick="addGalleryPhotos()">Add Photos</button>
+    <div id="galleryNotice" class="notice"></div><div class="small" style="margin-top:10px">💾 Photos are stored in this browser's IndexedDB database.</div>
+    </div>
+  </div>
+  <div id="galleryGrid" class="gallery-grid"></div>
+</main>
+</section>
+
+<section id="admin" class="page">
+<main class="container">
+  <div class="panel"><h2>Admin</h2><p class="small">Version 2 admin controls are on the Admin Dashboard.</p><button class="btn primary" onclick="showPage(localStorage.getItem('mitAdminLoggedIn')==='true'?'adminDashboard':'adminLogin')">Open Admin Dashboard</button></div>
+  <div class="panel">
+    <h2>Admin — Add New Event</h2>
+    <p class="small">Create events with clearly labelled date and time fields. Changes are saved in localStorage.</p>
+    <div class="form-grid">
+      <div class="field"><label>Event Name</label><input id="aName" placeholder="Event name"></div>
+      <div class="field"><label>Category</label><select id="aCategory"><option>Technical</option><option>Cultural</option><option>Sports</option><option>Workshop</option></select></div>
+      <div class="field"><label>Date</label><input id="aDate" type="date"></div>
+      <div class="field"><label>Time</label><input id="aTime" type="time"></div>
+      <div class="field"><label>Venue</label><input id="aVenue" placeholder="Venue"></div>
+      <div class="field"><label>Maximum Seats</label><input id="aSeats" type="number" min="1" placeholder="Maximum seats"></div>
+      <div class="field"><label>Event Poster URL (optional)</label><input id="aImage" placeholder="https://.../poster.jpg"></div>
+      <div class="field full"><label>Description</label><textarea id="aDesc" placeholder="Event description"></textarea></div>
+    </div>
+    <button class="btn primary" style="margin-top:14px" onclick="addEvent()">Add Event</button>
+    <div id="adminNotice" class="notice"></div>
+  </div>
+  <div class="panel">
+    <h2>Edit Upcoming Events Count</h2>
+    <p class="small">Set a custom number for the home-page centre display, or use Auto.</p>
+    <div class="toolbar">
+      <select id="upcomingMode" onchange="saveUpcomingSetting()"><option value="auto">Auto — count actual upcoming events</option><option value="custom">Custom</option></select>
+      <input id="upcomingCustom" type="number" min="0" placeholder="Enter count" onchange="saveUpcomingSetting()" disabled>
+    </div>
+    <div id="upcomingNotice" class="notice"></div>
+  </div>
+  <div class="panel">
+    <h2>Manage Events</h2>
+    <div id="adminEvents" class="grid"></div>
+  </div>
+</main>
+</section>
+
+
+<section id="dashboard" class="page">
+<main class="container">
+  <div class="panel">
+    <h2>Student Dashboard</h2>
+    <p class="small" id="welcomeText">Login to see your personal dashboard.</p>
+  </div>
+  <div class="dashboard-grid">
+    <div class="kpi"><b id="dashRegistered">0</b><span>Registered Events</span></div>
+    <div class="kpi"><b id="dashUpcoming">0</b><span>Upcoming Registrations</span></div>
+    <div class="kpi"><b id="dashNext">—</b><span>Next Event</span></div>
+  </div>
+  <div class="panel">
+    <h2>Notifications</h2>
+    <div id="notifications"></div>
+  </div>
+  <div class="panel">
+    <h2>Quick Actions</h2>
+    <div class="actions">
+      <button class="btn primary" onclick="showPage('events')">Find Events</button>
+      <button class="btn secondary" onclick="showPage('myRegistrations')">My Registrations</button>
+      <button class="btn danger" onclick="studentLogout()">Logout</button>
+    </div>
+  </div>
+</main>
+</section>
+
+<section id="eventDetails" class="page">
+<main class="container">
+  <div id="detailContent"></div>
+</main>
+</section>
+
+<section id="adminLogin" class="page">
+<main class="container">
+ <div class="admin-login">
+  <div class="panel">
+   <div class="login-icon">🔐</div>
+   <h2 class="center">Admin Login</h2>
+   <p class="small center">Demo administrator area.</p>
+   <form onsubmit="adminLogin(event)">
+    <div class="field"><label>Admin Username</label><input id="adminUser" required placeholder="admin"></div>
+    <div class="field" style="margin-top:12px"><label>Password</label><input id="adminPass" type="password" required placeholder="admin123"></div>
+    <button class="btn primary" style="width:100%;margin-top:16px" type="submit">Login</button>
+   </form>
+   <div id="adminLoginNotice" class="notice"></div>
+  </div>
+ </div>
+</main>
+</section>
+
+<section id="adminDashboard" class="page">
+<main class="container">
+ <div class="panel">
+  <h2>Admin Dashboard</h2>
+  <p class="small">Manage events and monitor registrations.</p>
+ </div>
+ <div class="dashboard-grid">
+  <div class="kpi"><b id="adminTotal">0</b><span>Total Events</span></div>
+  <div class="kpi"><b id="adminUpcoming">0</b><span>Upcoming Events</span></div>
+  <div class="kpi"><b id="adminRegs">0</b><span>Total Registrations</span></div>
+ </div>
+ <div class="panel">
+  <h2>All Student Registrations</h2>
+  <div class="table-wrap"><table class="data-table"><thead><tr><th>Registration ID</th><th>Student</th><th>Email</th><th>Department</th><th>Event</th><th>Date</th></tr></thead><tbody id="adminRegistrationRows"></tbody></table></div>
+ </div>
+ <div class="panel">
+  <h2>Add New Event</h2>
+  <div class="form-grid">
+   <div class="field"><label>Event Name</label><input id="aName2" placeholder="Event name"></div>
+   <div class="field"><label>Category</label><select id="aCategory2"><option>Technical</option><option>Cultural</option><option>Sports</option><option>Workshop</option></select></div>
+   <div class="field"><label>Date</label><input id="aDate2" type="date"></div>
+   <div class="field"><label>Time</label><input id="aTime2" type="time"></div>
+   <div class="field"><label>Venue</label><input id="aVenue2" placeholder="Venue"></div>
+   <div class="field"><label>Maximum Seats</label><input id="aSeats2" type="number" min="1" placeholder="Maximum seats"></div>
+   <div class="field full"><label>Poster URL (optional)</label><input id="aImage2" placeholder="https://.../poster.jpg"></div>
+   <div class="field full"><label>Description</label><textarea id="aDesc2" placeholder="Event description"></textarea></div>
+  </div>
+  <button class="btn primary" style="margin-top:14px" onclick="addEventV2()">Add Event</button>
+  <div id="adminV2Notice" class="notice"></div>
+ </div>
+ <div class="panel">
+  <h2>Manage Events</h2>
+  <div id="adminEventsV2" class="grid"></div>
+ </div>
+ <div class="panel">
+  <button class="btn danger" onclick="adminLogout()">Admin Logout</button>
+ </div>
+</main>
+</section>
+
+<section id="login" class="page">
+<main class="container">
+  <div class="login-wrap">
+    <div class="panel">
+      <div class="login-icon">🎓</div>
+      <h2 class="center">Student Login</h2>
+      <p class="small center">Demo login for this front-end project. No server is required.</p>
+      <form onsubmit="studentLogin(event)">
+        <div class="field"><label>Student Email</label><input id="loginEmail" type="email" required placeholder="student@college.edu"></div>
+        <div class="field" style="margin-top:12px"><label>Password</label><input id="loginPassword" type="password" required minlength="4" placeholder="Enter password"></div>
+        <button class="btn primary" style="width:100%;margin-top:16px" type="submit">Login</button>
+      </form>
+      <div id="loginNotice" class="notice"></div><div id="studentAccount" class="small" style="margin-top:12px"></div>
+      <div class="small" style="margin-top:14px">For demo purposes, any valid email and a password of 4+ characters will work.</div>
+    </div>
+  </div>
+</main>
+</section>
+
+<footer>MIT EventHub • College Event Management System • Demo Module</footer>
+
+<div id="modalBg" class="modal-bg" onclick="if(event.target===this)closeModal()">
+ <div class="modal">
+  <button class="close" onclick="closeModal()">×</button>
+  <h2 id="modalTitle">Register</h2>
+  <div id="modalInfo" class="small" style="margin-bottom:15px"></div>
+  <form onsubmit="submitRegistration(event)">
+    <input type="hidden" id="eventId">
+    <div class="field"><label>Student Name</label><input id="studentName" required placeholder="Enter your name"></div>
+    <div class="field" style="margin-top:12px"><label>College Email</label><input id="studentEmail" type="email" required placeholder="name@college.edu"></div>
+    <div class="field" style="margin-top:12px"><label>Department</label><input id="studentDept" required placeholder="e.g. CSE"></div>
+    <button class="btn primary" style="margin-top:16px" type="submit">Confirm Registration</button>
+  </form>
+  <div id="regNotice" class="notice"></div>
+ </div>
+</div>
+
+<div id="photoBg" class="modal-bg" onclick="if(event.target===this)closePhoto()">
+ <div class="modal" style="max-width:900px;text-align:center">
+  <button class="close" onclick="closePhoto()">×</button>
+  <img id="photoPreview" style="max-width:100%;max-height:70vh;border-radius:12px;object-fit:contain">
+  <h3 id="photoCaption"></h3>
+ </div>
+</div>
+
+<script>
+const seed=[
+{id:1,name:"CodeSprint 2026",category:"Technical",date:"2026-10-29",time:"10:00",venue:"MIT Computing Lab",seats:120,registered:74,desc:"Competitive programming challenge for students."},
+{id:2,name:"TechTalk: AI & Future",category:"Workshop",date:"2026-11-03",time:"14:00",venue:"A. R. Auditorium",seats:200,registered:121,desc:"Interactive session on AI, careers and emerging technology."},
+{id:3,name:"Culturals 2K26",category:"Cultural",date:"2026-11-08",time:"17:30",venue:"Open Air Theatre",seats:500,registered:342,desc:"Music, dance and student performances celebrating campus culture."},
+{id:4,name:"Inter-Department Cricket",category:"Sports",date:"2026-11-12",time:"08:00",venue:"MIT Sports Ground",seats:80,registered:52,desc:"Department teams compete in the annual cricket tournament."},
+{id:5,name:"Web Development Bootcamp",category:"Workshop",date:"2026-11-18",time:"09:30",venue:"CS Seminar Hall",seats:60,registered:39,desc:"Hands-on introduction to modern web application development."},
+{id:6,name:"Project Expo 2026",category:"Technical",date:"2026-11-25",time:"11:00",venue:"MIT Main Block",seats:150,registered:96,desc:"Students showcase innovative software and hardware projects."}
+];
+let events=JSON.parse(localStorage.getItem("mitEvents")||"null")||seed;
+let registrations=JSON.parse(localStorage.getItem("mitRegistrations")||"[]");
+let galleryCache=[];
+let filter="All";
+let loggedIn=localStorage.getItem("mitStudentLoggedIn")==="true";
+
+/* IndexedDB database: mit_eventhub_db
+   Stores: events, registrations, gallery, settings
+   localStorage is retained only as a small migration/cache for legacy V2 data. */
+const DB_NAME="mit_eventhub_db",DB_VERSION=1;
+let dbReady=null;
+function openDB(){
+  if(dbReady)return dbReady;
+  dbReady=new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if(!db.objectStoreNames.contains("events"))db.createObjectStore("events",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("registrations"))db.createObjectStore("registrations",{keyPath:"registrationId"});
+      if(!db.objectStoreNames.contains("gallery"))db.createObjectStore("gallery",{keyPath:"id",autoIncrement:true});
+      if(!db.objectStoreNames.contains("settings"))db.createObjectStore("settings",{keyPath:"key"});
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+  return dbReady;
+}
+function txPut(store,value){return openDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(store,"readwrite");tx.objectStore(store).put(value);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)}))}
+function txDelete(store,key){return openDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(store,"readwrite");tx.objectStore(store).delete(key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)}))}
+function txGetAll(store){return openDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(store,"readonly"),req=tx.objectStore(store).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error)}))}
+function dbReplaceAll(store,values){return openDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(store,"readwrite"),os=tx.objectStore(store);os.clear();values.forEach(v=>os.put(v));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)}))}
+function save(){
+  localStorage.setItem("mitEvents",JSON.stringify(events));
+  localStorage.setItem("mitRegistrations",JSON.stringify(registrations));
+  Promise.all([dbReplaceAll("events",events),dbReplaceAll("registrations",registrations)]).catch(console.error);
+}
+async function hydrateDatabase(){
+  try{
+    const [dbEvents,dbRegs,dbGallery]=await Promise.all([txGetAll("events"),txGetAll("registrations"),txGetAll("gallery")]);
+    if(dbEvents.length){events=dbEvents;localStorage.setItem("mitEvents",JSON.stringify(events));}
+    else {await dbReplaceAll("events",events);}
+    if(dbRegs.length){registrations=dbRegs;localStorage.setItem("mitRegistrations",JSON.stringify(registrations));}
+    else {await dbReplaceAll("registrations",registrations);}
+    galleryCache=dbGallery;
+    // One-time migration of old V2 gallery data from localStorage into IndexedDB.
+    if(!galleryCache.length){
+      const legacy=JSON.parse(localStorage.getItem("mitGallery")||"[]");
+      if(legacy.length){
+        galleryCache=legacy.map((x,i)=>({id:Date.now()+i,title:x.title||"College Event",data:x.data,eventId:x.eventId||""}));
+        await dbReplaceAll("gallery",galleryCache);
+      }
+    }
+  }catch(err){console.error("Database initialization failed",err)}
+}
+function showPage(id){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ window.scrollTo({top:0,behavior:"smooth"});
+ if(id==="myRegistrations")renderRegistered();
+ if(id==="gallery")renderGallery();
+ if(id==="admin")renderAdminEvents(); if(id==="dashboard")renderDashboard(); if(id==="adminDashboard")renderAdminDashboard();
+}
+function setFilter(f,el){filter=f;document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));el.classList.add("active");renderEvents()}
+function fmtDate(d){return new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}
+function localDateKey(d=new Date()) { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${day}`; }
+function upcomingActual(){return events.filter(e=>e.date>=localDateKey()).length}
+function updateStats(){
+ const actual=upcomingActual(), setting=JSON.parse(localStorage.getItem("mitUpcomingSetting")||'{"mode":"auto","value":0}');
+ const displayed=setting.mode==="custom"?Number(setting.value)||0:actual;
+ document.getElementById("totalEvents").textContent=events.length;
+ document.getElementById("upcoming").textContent=actual;
+ document.getElementById("upcomingCenter").textContent=displayed;
+ document.getElementById("registrations").textContent=registrations.length;
+ document.getElementById("seats").textContent=events.reduce((s,e)=>s+Math.max(0,e.seats-e.registered),0);
+}
+function eventStatus(e){
+ const today=localDateKey();
+ const available=Math.max(0,e.seats-e.registered);
+ if(e.date<today)return ["Completed","done"];
+ if(available<=0)return ["Full","full"];
+ if(available<=Math.max(5,Math.ceil(e.seats*.15)))return ["Filling Fast","fast"];
+ return ["Registration Open","open"];
+}
+function eventImage(e){
+ return e.image||"data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="340"><rect width="100%" height="100%" fill="#dbeaff"/><text x="50%" y="48%" text-anchor="middle" font-size="42" font-family="Arial" fill="#1453a6">MIT EventHub</text><text x="50%" y="65%" text-anchor="middle" font-size="22" font-family="Arial" fill="#526078">${esc(e.name)}</text></svg>`);
+}
+function renderEvents(){
+ const q=document.getElementById("search").value.toLowerCase(),sort=document.getElementById("sort").value;
+ let list=events.filter(e=>(filter==="All"||e.category===filter)&&(`${e.name} ${e.venue} ${e.category}`.toLowerCase().includes(q)));
+ if(sort==="date")list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+ if(sort==="seats")list.sort((a,b)=>(b.seats-b.registered)-(a.seats-a.registered));
+ if(sort==="name")list.sort((a,b)=>a.name.localeCompare(b.name));
+ document.getElementById("eventGrid").innerHTML=list.length?list.map(e=>{
+  const available=Math.max(0,e.seats-e.registered),pct=Math.min(100,Math.round(e.registered/e.seats*100)),st=eventStatus(e);
+  return `<article class="card"><img class="event-poster" src="${eventImage(e)}" alt="${esc(e.name)}"><div class="card-top"><div class="category">${esc(e.category)}</div><h3>${esc(e.name)}</h3><div>📅 ${fmtDate(e.date)} &nbsp;•&nbsp; ⏰ ${esc(e.time)}</div><span class="status ${st[1]}">${st[0]}</span></div><div class="card-body"><div class="meta">📍 ${esc(e.venue)}</div><div class="desc">${esc(e.desc)}</div><div class="seat"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>${e.registered}/${e.seats} registered</span><b>${available} seats left</b></div><div class="bar"><i style="width:${pct}%"></i></div></div><div class="actions"><button class="btn primary" ${available<=0||e.date<localDateKey()?"disabled":""} onclick="openModal(${e.id})">${available<=0?"Full":e.date<localDateKey()?"Closed":"Register"}</button><button class="btn secondary" onclick="showDetailsPage(${e.id})">View Details</button></div></div></article>`
+ }).join(""):'<div class="empty">No events found.</div>';
+ updateStats();
+}
+function openModal(id){
+ const e=events.find(x=>x.id===id); if(!e)return;
+ document.getElementById("eventId").value=id;
+ document.getElementById("modalTitle").textContent="Register for "+e.name;
+ document.getElementById("modalInfo").textContent=`📅 Date: ${fmtDate(e.date)}  •  ⏰ Time: ${e.time}  •  📍 Venue: ${e.venue}`;
+ document.getElementById("regNotice").style.display="none";
+ if(loggedIn){document.getElementById("studentEmail").value=localStorage.getItem("mitStudentEmail")||"";document.getElementById("studentName").value=localStorage.getItem("mitStudentName")||"";document.getElementById("studentDept").value=localStorage.getItem("mitStudentDept")||"";}
+ document.getElementById("modalBg").style.display="flex";
+}
+function closeModal(){document.getElementById("modalBg").style.display="none"}
+function submitRegistration(ev){
+ ev.preventDefault();
+ const id=+document.getElementById("eventId").value,e=events.find(x=>x.id===id);
+ if(!e)return;
+ const name=document.getElementById("studentName").value.trim(),email=document.getElementById("studentEmail").value.trim().toLowerCase(),dept=document.getElementById("studentDept").value.trim();
+ if(registrations.some(r=>r.eventId===id&&r.email.toLowerCase()===email)){showNotice("regNotice","You are already registered for this event.",true);return}
+ if(e.registered>=e.seats){showNotice("regNotice","Sorry, this event is full.",true);return}
+ const registrationId="MIT-"+Date.now().toString(36).toUpperCase();
+ e.registered++;
+ registrations.push({registrationId,eventId:id,name,email,dept,date:new Date().toISOString()});
+ save();
+ localStorage.setItem("mitStudentEmail",email);
+ localStorage.setItem("mitStudentName",name);
+ localStorage.setItem("mitStudentDept",dept);
+ loggedIn=true;localStorage.setItem("mitStudentLoggedIn","true");
+ updateLoginNav();
+ showNotice("regNotice","Registration successful! ID: "+registrationId);
+ renderEvents();renderRegistered();renderDashboard();renderAdminEvents();
+ setTimeout(()=>{closeModal();showPage("myRegistrations")},1000);
+}
+function currentStudentEmail(){return (localStorage.getItem("mitStudentEmail")||"").toLowerCase()}
+function daysUntil(dateString){
+  const today=new Date();today.setHours(0,0,0,0);
+  const target=new Date(dateString+"T00:00:00");
+  return Math.max(0,Math.ceil((target-today)/86400000));
+}
+function renderRegistered(){
+  const box=document.getElementById("registeredList"),email=currentStudentEmail();
+  if(!loggedIn||!email){box.innerHTML='<div class="empty">Please login as a student to view your registrations.</div>';return}
+  const mine=registrations.filter(r=>(r.email||"").toLowerCase()===email)
+    .map(r=>({...r,event:events.find(x=>String(x.id)===String(r.eventId))})).filter(r=>r.event)
+    .sort((a,b)=>(a.event.date+a.event.time).localeCompare(b.event.date+b.event.time));
+  if(!mine.length){box.innerHTML='<div class="empty"><h3>No registered events yet</h3><p>Explore Events and register. Your confirmed events will appear here, ordered by the soonest event first.</p><button class="btn primary" onclick="showPage(\'events\')">Explore Events</button></div>';return}
+  box.innerHTML=mine.map(r=>{
+    const e=r.event,past=e.date<localDateKey(),days=daysUntil(e.date);
+    const countdown=past?'Event completed':days===0?'Happening today':`In ${days} day${days===1?'':'s'}`;
+    return `<article class="card"><div class="card-top"><div class="category">${esc(e.category)}</div><h3>${esc(e.name)}</h3><div>📅 ${fmtDate(e.date)} &nbsp;•&nbsp; ⏰ ${esc(e.time)}</div><span class="status ${past?'done':'open'}">${countdown}</span></div><div class="card-body"><div class="meta">📍 ${esc(e.venue)}</div><div class="meta">👤 ${esc(r.name||localStorage.getItem("mitStudentName")||"Student")}</div><div class="meta">🏫 ${esc(r.dept||localStorage.getItem("mitStudentDept")||"")}</div><div class="meta">🎫 Registration ID: <b>${esc(r.registrationId||"Legacy")}</b></div><div class="notification"><b>${past?'Event date':'When is it happening?'}</b><br>${fmtDate(e.date)} at ${esc(e.time)}<br><b>${past?'Status':'Days to go'}:</b> ${past?'Completed':days===0?'Today':days+' day'+(days===1?'':'s')+' to go'}</div><div class="actions"><button class="btn primary" onclick="showTicket('${esc(r.registrationId||"")}')">View Ticket</button><button class="btn secondary" onclick="showDetailsPage(${e.id})">View Event</button></div></div></article>`;
+  }).join("");
+}
+function getGallery(){return galleryCache}
+function saveGallery(g){
+  galleryCache=g;
+  return dbReplaceAll("gallery",g).catch(console.error);
+}
+function renderGallery(){
+  const g=getGallery(),box=document.getElementById("galleryGrid"),sel=document.getElementById("galleryEvent");
+  const isAdmin=localStorage.getItem("mitAdminLoggedIn")==="true";
+  const upload=document.getElementById("galleryUploadPanel");if(upload)upload.style.display=isAdmin?"block":"none";
+  document.getElementById("galleryIntro").textContent=isAdmin?"Admin mode: upload new photos or remove existing gallery photos.":"Students can view event photos here. Photo uploads are available only to the admin.";
+  if(sel)sel.innerHTML='<option value="">Select event album (optional)</option>'+events.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join("");
+  if(!g.length){box.innerHTML='<div class="empty">No event photos added yet.</div>';return}
+  box.innerHTML=g.map((x,i)=>`<article class="gallery-card"><img src="${x.data}" alt="${esc(x.title)}" onclick="openPhoto(${i})"><div class="gallery-info"><h3>${esc(x.title)}</h3><p>📸 ${x.eventId?(events.find(e=>String(e.id)===String(x.eventId))?.name||"Event Album"):"Event Gallery"}</p>${isAdmin?`<button class="btn danger" style="margin-top:10px" onclick="deletePhoto(${i})">Remove</button>`:""}</div></article>`).join("");
+}
+function addGalleryPhotos(){
+  if(localStorage.getItem("mitAdminLoggedIn")!=="true"){showNotice("galleryNotice","Only an admin can upload photos.",true);return}
+  const files=[...document.getElementById("galleryFile").files],title=document.getElementById("galleryTitle").value.trim()||"College Event",eventId=document.getElementById("galleryEvent").value||"";
+  if(!files.length){showNotice("galleryNotice","Please select at least one image.",true);return}
+  const g=[...getGallery()],pending=files.length;let done=0;
+  files.forEach(file=>{const reader=new FileReader();reader.onload=e=>{
+    g.push({id:Date.now()+Math.random(),title:(file.name.replace(/\.[^\/.]+$/,"" )||title),data:e.target.result,eventId});done++;
+    if(done===pending){saveGallery(g).then(()=>{renderGallery();document.getElementById("galleryFile").value="";document.getElementById("galleryTitle").value="";showNotice("galleryNotice",`${pending} photo(s) added successfully to the database.`)})}
+  };reader.readAsDataURL(file)});
+}
+function openPhoto(i){const x=getGallery()[i];if(!x)return;document.getElementById("photoPreview").src=x.data;document.getElementById("photoCaption").textContent=x.title;document.getElementById("photoBg").style.display="flex"}
+function closePhoto(){document.getElementById("photoBg").style.display="none"}
+function deletePhoto(i){if(localStorage.getItem("mitAdminLoggedIn")!=="true"){alert("Only an admin can remove photos.");return}if(confirm("Remove this photo from the gallery?")){const g=[...getGallery()];g.splice(i,1);saveGallery(g).then(renderGallery)}}
+
+function addEvent(){
+ const name=document.getElementById("aName").value.trim(),date=document.getElementById("aDate").value,time=document.getElementById("aTime").value,venue=document.getElementById("aVenue").value.trim(),seats=+document.getElementById("aSeats").value,category=document.getElementById("aCategory").value,desc=document.getElementById("aDesc").value.trim(),image=document.getElementById("aImage").value.trim();
+ if(!name||!date||!time||!venue||!seats){showNotice("adminNotice","Please fill all required fields.",true);return}
+ events.push({id:Date.now(),name,category,date,time,venue,seats,registered:0,desc:desc||"College event open for student registration.",image});save();renderEvents();renderAdminEvents();
+ ["aName","aDate","aTime","aVenue","aSeats","aDesc","aImage"].forEach(id=>document.getElementById(id).value="");
+ showNotice("adminNotice","Event added successfully.");
+}
+function renderAdminEvents(){
+ const box=document.getElementById("adminEvents");
+ box.innerHTML=events.length?events.map(e=>`<article class="card"><div class="card-top"><div class="category">${esc(e.category)}</div><h3>${esc(e.name)}</h3><div>📅 ${fmtDate(e.date)} &nbsp;•&nbsp; ⏰ ${esc(e.time)}</div></div><div class="card-body"><div class="meta">📍 ${esc(e.venue)}</div><div class="meta">👥 ${e.registered}/${e.seats} registered</div><button class="btn danger" onclick="removeEvent(${e.id})">Delete Event</button></div></article>`).join(""):'<div class="empty">No events available.</div>';
+}
+function removeEvent(id){
+ if(!confirm("Delete this event? Existing registrations for it will also be removed."))return;
+ events=events.filter(e=>e.id!==id);registrations=registrations.filter(r=>r.eventId!==id);save();renderEvents();renderRegistered();renderAdminEvents();
+}
+function saveUpcomingSetting(){
+ const mode=document.getElementById("upcomingMode").value,value=Math.max(0,Number(document.getElementById("upcomingCustom").value)||0);
+ localStorage.setItem("mitUpcomingSetting",JSON.stringify({mode,value}));
+ document.getElementById("upcomingCustom").disabled=mode!=="custom";updateStats();showNotice("upcomingNotice","Upcoming event display setting saved.");
+}
+function loadUpcomingSetting(){
+ const s=JSON.parse(localStorage.getItem("mitUpcomingSetting")||'{"mode":"auto","value":0}');
+ document.getElementById("upcomingMode").value=s.mode;document.getElementById("upcomingCustom").value=s.value||"";document.getElementById("upcomingCustom").disabled=s.mode!=="custom";
+}
+function studentLogin(ev){
+ ev.preventDefault();const email=document.getElementById("loginEmail").value.trim(),pass=document.getElementById("loginPassword").value;
+ if(!email||pass.length<4){showNotice("loginNotice","Enter a valid email and a password with at least 4 characters.",true);return}
+ loggedIn=true;localStorage.setItem("mitStudentLoggedIn","true");localStorage.setItem("mitStudentEmail",email);
+ document.getElementById("loginNav").textContent="Student Profile";showNotice("loginNotice","Login successful! Welcome to MIT EventHub.");
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function viewDetails(id){const e=events.find(x=>x.id===id);if(!e)return;alert(`${e.name}\n\nCategory: ${e.category}\nDate: ${fmtDate(e.date)}\nTime: ${e.time}\nVenue: ${e.venue}\nSeats available: ${Math.max(0,e.seats-e.registered)}\n\n${e.desc}`)}
+function showNotice(id,msg,error=false){const x=document.getElementById(id);x.textContent=msg;x.classList.toggle("error",error);x.style.display="block";setTimeout(()=>x.style.display="none",3500)}
+
+function updateLoginNav(){
+ const n=document.getElementById("loginNav");
+ if(loggedIn){n.textContent="Student Profile";document.getElementById("studentAccount").textContent="Logged in as: "+(localStorage.getItem("mitStudentEmail")||"");}
+ else{n.textContent="Student Login";if(document.getElementById("studentAccount"))document.getElementById("studentAccount").textContent=""}
+}
+function studentLogin(ev){
+ ev.preventDefault();
+ const email=document.getElementById("loginEmail").value.trim().toLowerCase(),pass=document.getElementById("loginPassword").value;
+ if(!email||pass.length<4){showNotice("loginNotice","Enter a valid email and a password with at least 4 characters.",true);return}
+ localStorage.removeItem("mitAdminLoggedIn");
+ loggedIn=true;localStorage.setItem("mitStudentLoggedIn","true");localStorage.setItem("mitStudentEmail",email);
+ localStorage.setItem("mitStudentName",email.split("@")[0]);
+ updateLoginNav();renderGallery();renderRegistered();renderDashboard();
+ showNotice("loginNotice","Login successful! Welcome to MIT EventHub.");
+}
+function studentLogout(){
+ loggedIn=false;localStorage.removeItem("mitStudentLoggedIn");localStorage.removeItem("mitStudentEmail");localStorage.removeItem("mitStudentName");localStorage.removeItem("mitStudentDept");
+ updateLoginNav();renderRegistered();renderDashboard();showPage("login");
+}
+function renderDashboard(){
+ const email=currentStudentEmail(),mine=registrations.filter(r=>email&&r.email.toLowerCase()===email);
+ document.getElementById("dashRegistered").textContent=mine.length;
+ const upcoming=mine.filter(r=>{const e=events.find(x=>x.id===r.eventId);return e&&e.date>=localDateKey()});
+ document.getElementById("dashUpcoming").textContent=upcoming.length;
+ const next=upcoming.map(r=>events.find(x=>x.id===r.eventId)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))[0];
+ document.getElementById("dashNext").textContent=next?fmtDate(next.date):"—";
+ document.getElementById("welcomeText").textContent=loggedIn?"Welcome, "+(localStorage.getItem("mitStudentName")||email)+"!":"Login to see your personal dashboard.";
+ const notes=document.getElementById("notifications");
+ if(!loggedIn){notes.innerHTML='<div class="notification">Please login to receive student notifications.</div>';return}
+ let n=[];
+ upcoming.forEach(r=>{const e=events.find(x=>x.id===r.eventId);if(e)n.push(`🎫 You are registered for <b>${esc(e.name)}</b> on ${fmtDate(e.date)} at ${esc(e.time)}.`)});
+ if(!n.length)n.push("📌 Explore Events and register for an upcoming college event.");
+ notes.innerHTML=n.map(x=>`<div class="notification">${x}</div>`).join("");
+}
+function showDetailsPage(id){
+ const e=events.find(x=>x.id===id);if(!e)return;
+ const st=eventStatus(e),available=Math.max(0,e.seats-e.registered);
+ document.getElementById("detailContent").innerHTML=`<div class="detail-layout">
+ <div class="detail-box"><img class="event-poster" style="height:280px;border-radius:12px" src="${eventImage(e)}" alt="${esc(e.name)}"><div class="category" style="color:var(--blue);margin-top:18px">${esc(e.category)}</div><h1>${esc(e.name)}</h1><span class="status ${st[1]}">${st[0]}</span><p style="line-height:1.7;color:var(--muted)">${esc(e.desc)}</p></div>
+ <div class="detail-box"><h2>Event Information</h2><p>📅 <b>Date:</b> ${fmtDate(e.date)}</p><p>⏰ <b>Time:</b> ${esc(e.time)}</p><p>📍 <b>Venue:</b> ${esc(e.venue)}</p><p>👥 <b>Seats:</b> ${available} available of ${e.seats}</p><button class="btn primary" ${available<=0||e.date<localDateKey()?"disabled":""} onclick="openModal(${e.id})">Register Now</button><button class="btn secondary" style="margin-left:8px" onclick="showPage('events')">Back to Events</button></div>
+ </div>`;
+ showPage("eventDetails");
+}
+function showTicket(regId){
+ const r=registrations.find(x=>x.registrationId===regId);if(!r)return;
+ const e=events.find(x=>x.id===r.eventId);if(!e)return;
+ document.getElementById("detailContent").innerHTML=`<div class="detail-box" style="max-width:650px;margin:auto"><h2>Registration Ticket</h2><div class="ticket"><div class="ticket-id">${esc(r.registrationId)}</div><h2>${esc(e.name)}</h2><p>👤 ${esc(r.name)}<br>🏫 ${esc(r.dept)}<br>📧 ${esc(r.email)}</p><p>📅 ${fmtDate(e.date)} &nbsp; • &nbsp; ⏰ ${esc(e.time)}<br>📍 ${esc(e.venue)}</p><canvas id="qrCanvas" width="180" height="180"></canvas><div class="small center">Show this registration ID at the event.</div></div><button class="btn secondary" style="margin-top:15px" onclick="showPage('myRegistrations')">Back to My Registrations</button></div>`;
+ showPage("eventDetails");
+ const c=document.getElementById("qrCanvas"),ctx=c.getContext("2d"),text=r.registrationId||"MIT-EVENT";
+ ctx.fillStyle="#fff";ctx.fillRect(0,0,180,180);ctx.fillStyle="#111";
+ let seedNum=0;for(let i=0;i<text.length;i++)seedNum=(seedNum*31+text.charCodeAt(i))>>>0;
+ for(let y=10;y<170;y+=10)for(let x=10;x<170;x+=10){seedNum=(seedNum*1664525+1013904223)>>>0;if(seedNum%3===0)ctx.fillRect(x,y,8,8)}
+}
+function adminLogin(ev){
+ ev.preventDefault();const u=document.getElementById("adminUser").value.trim(),p=document.getElementById("adminPass").value;
+ if(u==="admin"&&p==="admin123"){localStorage.setItem("mitAdminLoggedIn","true");renderAdminDashboard();renderGallery();showPage("adminDashboard");}
+ else showNotice("adminLoginNotice","Invalid admin credentials. Demo: admin / admin123",true);
+}
+function adminLogout(){localStorage.removeItem("mitAdminLoggedIn");renderGallery();updateLoginNav();showPage("adminLogin")}
+function renderAdminDashboard(){
+ document.getElementById("adminTotal").textContent=events.length;document.getElementById("adminUpcoming").textContent=upcomingActual();document.getElementById("adminRegs").textContent=registrations.length;
+ document.getElementById("adminRegistrationRows").innerHTML=registrations.length?registrations.map(r=>{const e=events.find(x=>x.id===r.eventId);return `<tr><td>${esc(r.registrationId||"Legacy")}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(r.dept)}</td><td>${e?esc(e.name):"Deleted event"}</td><td>${new Date(r.date).toLocaleDateString("en-IN")}</td></tr>`}).join(""):'<tr><td colspan="6">No registrations yet.</td></tr>';
+ renderAdminEventsV2();
+}
+function addEventV2(){
+ const name=document.getElementById("aName2").value.trim(),category=document.getElementById("aCategory2").value,date=document.getElementById("aDate2").value,time=document.getElementById("aTime2").value,venue=document.getElementById("aVenue2").value.trim(),seats=+document.getElementById("aSeats2").value,image=document.getElementById("aImage2").value.trim(),desc=document.getElementById("aDesc2").value.trim();
+ if(!name||!date||!time||!venue||!seats){showNotice("adminV2Notice","Please fill all required fields.",true);return}
+ events.push({id:Date.now(),name,category,date,time,venue,seats,registered:0,desc:desc||"College event open for student registration.",image});save();renderEvents();renderAdminDashboard();
+ ["aName2","aDate2","aTime2","aVenue2","aSeats2","aImage2","aDesc2"].forEach(id=>document.getElementById(id).value="");showNotice("adminV2Notice","Event added successfully.");
+}
+function renderAdminEventsV2(){
+ const box=document.getElementById("adminEventsV2");if(!box)return;
+ box.innerHTML=events.length?events.map(e=>`<article class="card"><img class="event-poster" src="${eventImage(e)}"><div class="card-top"><div class="category">${esc(e.category)}</div><h3>${esc(e.name)}</h3><div>📅 ${fmtDate(e.date)} • ⏰ ${esc(e.time)}</div></div><div class="card-body"><div class="meta">📍 ${esc(e.venue)}</div><div class="meta">👥 ${e.registered}/${e.seats} registered</div><button class="btn danger" onclick="removeEventV2(${e.id})">Delete Event</button></div></article>`).join(""):'<div class="empty">No events available.</div>';
+}
+function removeEventV2(id){
+ if(!confirm("Delete this event? Existing registrations for it will also be removed."))return;
+ events=events.filter(e=>e.id!==id);registrations=registrations.filter(r=>r.eventId!==id);save();renderEvents();renderRegistered();renderDashboard();renderAdminDashboard();
+}
+function migrateLegacyRegistrations(){
+  let changed=false;
+  registrations.forEach(r=>{if(!r.registrationId){r.registrationId="MIT-LEGACY-"+Math.random().toString(36).slice(2,8).toUpperCase();changed=true}});
+  if(changed)localStorage.setItem("mitRegistrations",JSON.stringify(registrations));
+}
+async function initApp(){
+  await hydrateDatabase();
+  // Keep the six built-in demo events upcoming even if an older saved browser database has stale dates.
+  const todayKey=localDateKey();
+  const demoNames=new Set(seed.map(e=>e.name));
+  const demoEvents=events.filter(e=>demoNames.has(e.name));
+  if(demoEvents.length && demoEvents.every(e=>e.date<todayKey)){
+    seed.forEach(se=>{const old=events.find(e=>e.name===se.name);if(old){old.date=se.date;old.time=se.time;}});
+  }
+  migrateLegacyRegistrations();
+  // Persist migrated/seed data into IndexedDB after legacy compatibility handling.
+  await Promise.all([dbReplaceAll("events",events),dbReplaceAll("registrations",registrations)]);
+  loadUpcomingSetting();
+  updateLoginNav();
+  renderEvents();renderRegistered();renderGallery();renderAdminEvents();renderDashboard();
+  if(localStorage.getItem("mitAdminLoggedIn")==="true")renderAdminDashboard();
+  updateStats();
+}
+initApp();
+</script>
+</body>
+</html>
